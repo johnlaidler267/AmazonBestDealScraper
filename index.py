@@ -80,11 +80,11 @@ def compare(item, bestItem):
     best_price, best_rating, best_numRatings = bestItem['price'], bestItem['rating'], bestItem['numberOfRatings']
 
     if price < best_price:
-        # if the price of the current item is less than the best one by 20%
+        # if the price of the current item is less than the best one by 10%
         if price <= best_price * 0.9:
             return bestItem if best_rating - rating >= 0.3 else item
 
-        # if the price of the current item is less than the best one by 10%
+        # if the price of the current item is less than the best one by 3%
         if price <= best_price * 0.97:
             if best_rating > rating:
                 if best_rating - rating >= 0.4:
