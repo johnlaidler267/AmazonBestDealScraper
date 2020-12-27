@@ -1,18 +1,20 @@
 from requests_html import HTMLSession
 from bs4 import BeautifulSoup
+import pandas as panda
 s = HTMLSession()
 
 def main(entry):
     url = f'https://www.amazon.com/s?k={entry}'
     initial = True
+    best_products = []
 
     for count in range(0, 3):
         soup = getData(url)
         #Gets all the div elements containing the products.
-        items = soup.find_all('div', {'data-component-type': 's-search-result'})
+        div_elements = soup.find_all('div', {'data-component-type': 's-search-result'})
 
         item_info_list = []
-        for item in items:
+        for item in div_elements:
             try:
                 info = getItemInfo(item)
             except:
@@ -20,8 +22,7 @@ def main(entry):
             item_info_list.append(info)
 
         bestItemOnPage = findBestItemOnPage(item_info_list)
-        print("best item on page")
-        print(bestItemOnPage)
+        best_products.append(bestItemOnPage)
 
         if initial: 
             bestItem = bestItemOnPage
@@ -32,9 +33,8 @@ def main(entry):
         bestItem = compare(bestItemOnPage, bestItem)
         url = getNextPage(soup)
 
-    print("best item")
-    print(bestItem)
-    return bestItem
+    best_products.append(bestItem)
+    return best_products
 
 def getData(url):
     r = s.get(url)
@@ -80,12 +80,12 @@ def compare(item, bestItem):
     best_price, best_rating, best_numRatings = bestItem['price'], bestItem['rating'], bestItem['numberOfRatings']
 
     if price < best_price:
-        # if the price of the current item is less than the best one by 10%
+        # if the price of the current item is less than the best one by at least 10%
         if price <= best_price * 0.9:
             return bestItem if best_rating - rating >= 0.3 else item
 
-        # if the price of the current item is less than the best one by 3%
-        if price <= best_price * 0.97:
+        # if the price of the current item is less than the best one by at least 3%
+        if best_price * 0.9 >= price <= best_price * 0.97:
             if best_rating > rating:
                 if best_rating - rating >= 0.4:
                     return bestItem
@@ -95,9 +95,17 @@ def compare(item, bestItem):
                     return item
             else:
                 return item
+        
+        else:
+            return item if rating > best_rating else bestItem
     else:
         return bestItem
 
+def export_to_csv(product):
+    best_products = main(product)
+    data_frame = panda.DataFrame(best_products)
+    data_frame.to_csv('best items.csv')
+
 print("Please specify a product")
 product = input()
-main(product)
+export_to_csv(product)
